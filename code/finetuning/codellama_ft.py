@@ -2,9 +2,9 @@ import os
 import json
 import logging
 import torch
-import gc
 import numpy as np
 import argparse
+import random
 from datetime import datetime
 from transformers import (
     AutoModelForCausalLM,
@@ -12,7 +12,7 @@ from transformers import (
     BitsAndBytesConfig,
     TrainingArguments,
     Trainer,
-    DataCollatorForLanguageModeling,
+    default_data_collator,
     EarlyStoppingCallback
 )
 from peft import LoraConfig, get_peft_model
@@ -73,7 +73,7 @@ def preprocess_function(examples, tokenizer):
         prompts,
         truncation=True,
         max_length=2048,
-        padding="longest",
+        padding="max_length",
         return_tensors="pt"
     )
 
@@ -91,6 +91,8 @@ def preprocess_function(examples, tokenizer):
         if start_idx is not None:
             labels[i, :start_idx] = -100
 
+    labels[encodings["attention_mask"] == 0] = -100
+
     encodings["labels"] = labels
     return encodings
 
@@ -106,8 +108,11 @@ def load_data(train_path, val_path, tokenizer):
                             "description": str(item["description"]).strip(),
                             "code": str(item["code"]).strip()
                         })
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Unable to load dataset: {file_path}") from exc
+
+        if not data:
+            raise ValueError(f"Dataset contains no valid description/code pairs: {file_path}")
         return data
 
     train_data = load_json(train_path)
@@ -174,22 +179,24 @@ class MetricsCalculator:
         return {"bleu": avg_bleu}
 
 def main():
-    import random
-    
     parser = argparse.ArgumentParser(description="codellama-sft")
     parser.add_argument("--model_path", type=str, required=True)
     parser.add_argument("--train_data_path", type=str, required=True)
     parser.add_argument("--val_data_path", type=str, required=True)
     parser.add_argument("--output_dir", type=str, required=True)
-    parser.add_argument("--num_train_epochs", type=int, default=8)
-    parser.add_argument("--per_device_train_batch_size", type=int, default=1)
+    parser.add_argument("--num_train_epochs", type=int, default=30)
+    parser.add_argument("--per_device_train_batch_size", type=int, default=2)
     parser.add_argument("--per_device_eval_batch_size", type=int, default=1)
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=8)
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=5)
     parser.add_argument("--learning_rate", type=float, default=3e-4)
     parser.add_argument("--warmup_ratio", type=float, default=0.05)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--early_stopping_patience", type=int, default=2)
     
     args = parser.parse_args()
+
+    if not torch.cuda.is_available():
+        parser.error("SFT requires a CUDA-capable NVIDIA GPU for 8-bit model loading.")
     
     set_seed(args.seed)
     logger = setup_logging(args.output_dir)
@@ -200,12 +207,7 @@ def main():
     except LookupError:
         nltk.download('punkt', quiet=True)
 
-    bnb_config = BitsAndBytesConfig(
-        load_in_8bit=True,
-        bnb_8bit_compute_dtype=torch.float16,
-        bnb_8bit_quant_type="nf8",
-        bnb_8bit_use_double_quant=True
-    )
+    bnb_config = BitsAndBytesConfig(load_in_8bit=True)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
@@ -261,9 +263,9 @@ def main():
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
+        data_collator=default_data_collator,
         compute_metrics=metrics_calculator.compute_metrics,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=args.early_stopping_patience)]
     )
     
     trainer.train()

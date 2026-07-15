@@ -244,9 +244,9 @@ def update_results(output_path, new_sample, is_first=False):
 def main():
     # Argument Parsing
     parser = argparse.ArgumentParser(description="deepseek-coder-zero-shot")
-    parser.add_argument("--model_path", type=str, default="../deepseek-coder-6.7b-instruct", 
+    parser.add_argument("--model_path", type=str, default="deepseek-ai/deepseek-coder-6.7b-instruct",
                         help="Path to the pre-trained model")
-    parser.add_argument("--data_path", type=str, default="../dataset/test/test_processed.json", 
+    parser.add_argument("--data_path", type=str, default="dataset/test/test.json",
                         help="Path to the test dataset json file")
     parser.add_argument("--output_path", type=str, default="deepseek_contract_results/results.json", 
                         help="Path to save the evaluation results")

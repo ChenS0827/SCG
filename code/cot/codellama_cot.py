@@ -141,9 +141,9 @@ contract SimpleStorage {
     }
 }
 """
-current_task = f"""
+    current_task = f"""
 Requirement: {description}
-""" 
+"""
     return f"{system_prompt}\n{examples_section}\n{current_task}"
 
 def scot_generate(tokenizer, model, scot_prompt, max_new_tokens=4096):
@@ -160,7 +160,7 @@ def scot_generate(tokenizer, model, scot_prompt, max_new_tokens=4096):
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
-                temperature=0.3,
+                temperature=0.2,
                 top_p=0.9,
                 do_sample=True,
                 repetition_penalty=1.2,
@@ -248,8 +248,8 @@ def update_results(output_path, new_sample, is_first=False):
 
 def main():
     parser = argparse.ArgumentParser(description="codellama-scot")
-    parser.add_argument("--model_path", type=str, default="../CodeLlama-7b-Instruct-hf", help="Path to the pre-trained model")
-    parser.add_argument("--data_path", type=str, default="../dataset/test/test.json", help="Path to the test dataset json file")
+    parser.add_argument("--model_path", type=str, default="meta-llama/CodeLlama-7b-Instruct-hf", help="Path or Hugging Face model ID")
+    parser.add_argument("--data_path", type=str, default="dataset/test/test.json", help="Path to the test dataset JSON file")
     parser.add_argument("--output_path", type=str, default="codellama_scot_results/codellama_scot_result.json", help="Path to save the evaluation results")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     parser.add_argument("--log_file", type=str, default="codellama_scot_log.log", help="Path to the log file")

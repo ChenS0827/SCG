@@ -1,0 +1,9 @@
+accelerate
+bitsandbytes
+datasets
+nltk
+numpy
+peft
+torch==2.8.0
+tqdm
+transformers

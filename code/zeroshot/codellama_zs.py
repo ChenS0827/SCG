@@ -133,7 +133,7 @@ def load_test_data(data_path):
         raise
 
 
-def generate_code(tokenizer, model, description, max_new_tokens=512):
+def generate_code(tokenizer, model, description, max_new_tokens=2048):
     """
     Generate code using the zero-shot prompt template.
     Template based on fig7-prompt_template.pdf.
@@ -163,7 +163,7 @@ Please write a high-quality, secure, and complete Solidity smart contract based 
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
-                temperature=0.2,       
+                temperature=0.2,
                 top_p=0.95,
                 do_sample=True,
                 repetition_penalty=1.1,
@@ -233,9 +233,9 @@ def update_results(output_path, new_sample, is_first=False):
 def main():
     # Argument Parsing
     parser = argparse.ArgumentParser(description="codellama-zero-shot")
-    parser.add_argument("--model_path", type=str, default="meta-llama/CodeLlama-7B-hf", 
+    parser.add_argument("--model_path", type=str, default="meta-llama/CodeLlama-7b-Instruct-hf",
                         help="Path to the pre-trained model")
-    parser.add_argument("--data_path", type=str, default="test.json", 
+    parser.add_argument("--data_path", type=str, default="dataset/test/test.json",
                         help="Path to the test dataset json file")
     parser.add_argument("--output_path", type=str, default="results/zero_shot_results.json", 
                         help="Path to save the evaluation results")

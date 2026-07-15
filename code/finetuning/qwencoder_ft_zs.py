@@ -22,8 +22,8 @@ except LookupError:
 
 class QwenCoderLoRAInferencer:
     def __init__(self, args):
-        self.base_model_path = os.path.abspath(args.base_model_path)
-        self.lora_model_path = os.path.abspath(args.lora_model_path)
+        self.base_model_path = args.base_model_path
+        self.lora_model_path = args.lora_model_path
         self.results_dir = os.path.abspath(args.results_dir)
         self.log_file = os.path.join(self.results_dir, args.log_file)
         self.results_file = os.path.join(self.results_dir, "qwen_lora_contract_results.json")
@@ -32,6 +32,8 @@ class QwenCoderLoRAInferencer:
         
         self.setup_logging()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.device.type != "cuda":
+            raise RuntimeError("LoRA inference requires a CUDA-capable NVIDIA GPU.")
         self.load_lora_model()
         self.initialize_results_file()
         
@@ -103,12 +105,7 @@ class QwenCoderLoRAInferencer:
 
     def load_lora_model(self):
         try:
-            bnb_config = BitsAndBytesConfig(
-                load_in_8bit=True,
-                bnb_8bit_compute_dtype=torch.float16,
-                bnb_8bit_quant_type="nf8",
-                bnb_8bit_use_double_quant=True
-            )
+            bnb_config = BitsAndBytesConfig(load_in_8bit=True)
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.base_model_path,
@@ -274,9 +271,9 @@ Please write a high-quality, secure, and complete Solidity smart contract based 
 
 def main():
     parser = argparse.ArgumentParser(description="QwenCoder LoRA Inference")
-    parser.add_argument("--base_model_path", type=str, default="../Qwen2.5-Coder-7B-Instruct")
-    parser.add_argument("--lora_model_path", type=str, default="./qwencoder_solidity_lora_8bit/best_model")
-    parser.add_argument("--test_data_path", type=str, default="../dataset/test/test.json")
+    parser.add_argument("--base_model_path", type=str, default="Qwen/Qwen2.5-Coder-7B-Instruct")
+    parser.add_argument("--lora_model_path", type=str, required=True)
+    parser.add_argument("--test_data_path", type=str, default="dataset/test/test.json")
     parser.add_argument("--results_dir", type=str, default="./qwen_lora_contract_results")
     parser.add_argument("--log_file", type=str, default="qwen_lora_log.log")
     parser.add_argument("--batch_size", type=int, default=4)

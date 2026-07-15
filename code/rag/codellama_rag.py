@@ -5,9 +5,6 @@ import re
 import argparse
 import random
 import numpy as np
-from datetime import datetime
-from tqdm import tqdm
-
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
@@ -305,7 +302,7 @@ def main():
     parser.add_argument("--model_path", type=str, required=True, help="Path to the model")
     parser.add_argument("--data_path", type=str, required=True, help="Path to retrieval results json")
     parser.add_argument("--output_dir", type=str, default="codellama_contract_results", help="Directory to save results")
-    parser.add_argument("--do_train", action="store_true", help="Enable training mode (uses 8-bit)")
+    parser.add_argument("--load_in_8bit", "--do_train", dest="load_in_8bit", action="store_true", help="Load the model in 8-bit mode")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--batch_size", type=int, default=1, help="Inference batch size")
     parser.add_argument("--top_k", type=int, default=3, help="Number of retrieval contexts to use")
@@ -322,7 +319,7 @@ def main():
 
     # 2. Load Model
     logger.info("Loading model...")
-    if args.do_train:
+    if args.load_in_8bit:
         # Training: Use 8-bit quantization
         quantization_config = BitsAndBytesConfig(load_in_8bit=True)
         model = AutoModelForCausalLM.from_pretrained(

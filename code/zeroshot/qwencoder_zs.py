@@ -206,9 +206,9 @@ def update_results(output_path, new_sample, is_first=False):
 
 def main():
     parser = argparse.ArgumentParser(description="qwen-coder-zero-shot")
-    parser.add_argument("--model_path", type=str, default="../Qwen2.5-Coder-7B-Instruct", 
+    parser.add_argument("--model_path", type=str, default="Qwen/Qwen2.5-Coder-7B-Instruct",
                         help="Path to the pre-trained model")
-    parser.add_argument("--data_path", type=str, default="../dataset/test/test.json", 
+    parser.add_argument("--data_path", type=str, default="dataset/test/test.json",
                         help="Path to the test dataset json file")
     parser.add_argument("--output_path", type=str, default="qwen_contract_results/results.json", 
                         help="Path to save the evaluation results")

@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Experiment outputs
+outputs/
+*_results/
+*_contract_results/
+*.log
+
+# Model artifacts
+checkpoints/
+checkpoint-*/
+best_model/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
